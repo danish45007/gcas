@@ -15,3 +15,11 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 		outbound: outbound,
 	}
 }
+
+/*
+Close implements the Peer interface
+responsible for closing the underlying TCP connection for the peer
+*/
+func (p *TCPPeer) Close() error {
+	return p.conn.Close()
+}

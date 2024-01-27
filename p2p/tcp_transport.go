@@ -18,12 +18,23 @@ type TCPTransport struct {
 	listener net.Listener
 	peerLock sync.RWMutex
 	peers    map[net.Addr]Peer
+	rpcChan  chan RPC
 }
 
 func NewTCPTransport(config TCPTransportConfig) *TCPTransport {
 	return &TCPTransport{
-		config: config,
+		config:  config,
+		rpcChan: make(chan RPC),
 	}
+}
+
+/*
+Consume implements the Transport interface
+returns a read-only channel of type RPC
+which can be used to read incoming messages from another Peer in the network
+*/
+func (t *TCPTransport) Consume() <-chan RPC {
+	return t.rpcChan
 }
 
 func (t *TCPTransport) ListenAndAccept() error {
@@ -57,13 +68,13 @@ func (t *TCPTransport) handleConnection(conn net.Conn) {
 	peer := NewTCPPeer(conn, true)
 	fmt.Printf("New Incoming connection from %+v\n", peer)
 	// read loop
-	msg := &Message{}
+	rpc := RPC{}
 	for {
-		if err := t.config.Decoder.Decode(conn, msg); err != nil {
+		if err := t.config.Decoder.Decode(conn, &rpc); err != nil {
 			fmt.Printf("Error decoding message: %s", err.Error())
 			continue
 		}
-		msg.From = conn.RemoteAddr()
-		fmt.Printf("Received message: %+v\n", msg)
+		rpc.From = conn.RemoteAddr()
+		t.rpcChan <- rpc
 	}
 }

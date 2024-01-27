@@ -6,22 +6,22 @@ import (
 )
 
 type Decoder interface {
-	Decode(r io.Reader, message *Message) error
+	Decode(r io.Reader, rpc *RPC) error
 }
 
 type DefaultDecoder struct{}
 type GoBinaryDecoder struct{}
 
-func (d DefaultDecoder) Decode(r io.Reader, message *Message) error {
+func (d DefaultDecoder) Decode(r io.Reader, rpc *RPC) error {
 	buf := make([]byte, 1028)
 	n, err := r.Read(buf)
 	if err != nil {
 		return err
 	}
-	message.Payload = buf[:n]
+	rpc.Payload = buf[:n]
 	return nil
 }
 
-func (d GoBinaryDecoder) Decode(r io.Reader, message *Message) error {
-	return gob.NewDecoder(r).Decode(message)
+func (d GoBinaryDecoder) Decode(r io.Reader, rpc *RPC) error {
+	return gob.NewDecoder(r).Decode(rpc)
 }

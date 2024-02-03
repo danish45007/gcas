@@ -2,47 +2,54 @@ package storage
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"testing"
+
+	"github.com/danish45007/gcas/cascrypto"
 )
 
-// func TestStorage(t *testing.T) {
-// 	config := StorageConfig{
-// 		PathTransform: CASPathTransform,
-// 		SetRoot:       "../",
-// 	}
-// 	testKey := "test"
-// 	testData := []byte("test data...")
-// 	s := NewStorage(config)
-// 	data := bytes.NewReader(testData)
-// 	if err := s.WriteStream(testKey, data); err != nil {
-// 		t.Error(err)
-// 	}
-// 	r, err := s.Read(testKey)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	b, _ := io.ReadAll(r)
-// 	if !bytes.Equal(b, testData) {
-// 		t.Errorf("Expected %s, got %s", testData, b)
-// 	}
-// }
-
-func TestStorageDelete(t *testing.T) {
-	config := StorageConfig{
+func newStore() *Storage {
+	opts := StorageConfig{
 		PathTransform: CASPathTransform,
-		SetRoot:       "../",
 	}
-	testKey := "test"
-	testData := []byte("test data...")
-	s := NewStorage(config)
-	data := bytes.NewReader(testData)
-	if err := s.WriteStream(testKey, data); err != nil {
+	return NewStorage(opts)
+}
+
+func teardown(t *testing.T, s *Storage) {
+	if err := s.Clear(); err != nil {
 		t.Error(err)
 	}
-	if err := s.Delete(testKey); err != nil {
+}
+func TestStorage(t *testing.T) {
+	newStorage := newStore()
+	id := cascrypto.GenerateId()
+	defer teardown(t, newStorage)
+	i := 1
+	key := fmt.Sprintf("test_%d", i)
+	data := []byte(fmt.Sprintf("test data %d", i))
+	_, err := newStorage.WriteStream(id, key, bytes.NewReader(data))
+	if err != nil {
 		t.Error(err)
 	}
-	if s.Has(testKey) {
-		t.Errorf("Expected key %s to be deleted", testKey)
+	if exist := newStorage.Has(id, key); !exist {
+		t.Errorf("expected to have key %s", key)
+	}
+	_, r, err := newStorage.Read(id, key)
+	if err != nil {
+		t.Error(err)
+	}
+
+	b, _ := io.ReadAll(r)
+	if string(b) != string(data) {
+		t.Errorf("want %s have %s", data, b)
+	}
+
+	if err := newStorage.Delete(id, key); err != nil {
+		t.Error(err)
+	}
+
+	if ok := newStorage.Has(id, key); ok {
+		t.Errorf("expected to NOT have key %s", key)
 	}
 }

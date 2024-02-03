@@ -117,7 +117,7 @@ func (t *TCPTransport) handleConnection(conn net.Conn, outbound bool) {
 			fmt.Printf("Error decoding message: %s", err.Error())
 			continue
 		}
-		rpc.From = conn.RemoteAddr()
+		rpc.From = conn.RemoteAddr().String()
 		if rpc.Stream {
 			peer.wg.Add(1)
 			fmt.Printf("[%s] incoming stream, waiting...\n", conn.RemoteAddr())

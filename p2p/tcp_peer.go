@@ -39,3 +39,15 @@ func (p *TCPPeer) Send(data []byte) error {
 	_, err := p.Conn.Write(data)
 	return err
 }
+
+func (p *TCPPeer) Read(b []byte) (n int, err error) {
+	return p.Conn.Read(b)
+}
+
+func (p *TCPPeer) Write(b []byte) (n int, err error) {
+	return p.Conn.Write(b)
+}
+
+func (p *TCPPeer) Address() string {
+	return p.Conn.RemoteAddr().String()
+}
